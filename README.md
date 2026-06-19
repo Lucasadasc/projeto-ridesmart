@@ -50,12 +50,13 @@ Abra `projeto_final.ipynb`, selecione o kernel **ridesmart** e execute as célul
 
 ```
 projeto-ridesmart/
-├── projeto_final.ipynb      # Notebook principal com implementação e análise
+├── projeto_final.ipynb         # Notebook principal com implementação e análise
 ├── PROJETO_FINAL_RideSmart.md  # Especificação do projeto
 ├── README.md
-├── cache/                   # Cache do OSMnx (dados do OpenStreetMap)
-├── docs/                    # Documentação de apoio
-└── venv/                    # Ambiente virtual (não versionado)
+├── cache/                      # Cache do OSMnx (dados do OpenStreetMap)
+├── docs/
+│   └── relatorio.tex           # Relatório acadêmico (IEEE dupla coluna, LaTeX)
+└── venv/                       # Ambiente virtual (não versionado)
 ```
 
 ---
@@ -74,6 +75,19 @@ projeto-ridesmart/
 ## Resultados
 
 > Seção será atualizada com gráficos e tabelas de comparação após a implementação de todas as issues.
+
+---
+
+## Relatório Acadêmico (IEEE Dupla Coluna)
+
+Arquivo LaTeX: `docs/relatorio.tex` —模板 IEEEtran conference, 7 seções com placeholders `[DADOS]`.
+
+**Compilar o PDF:**
+```bash
+cd docs
+pdflatex relatorio.tex
+pdflatex relatorio.tex   # segunda passagem para referências cruzadas
+```
 
 ---
 
