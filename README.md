@@ -4,7 +4,7 @@
 
 Dado um ponto de origem `A`, um destino `B` e uma distância máxima que o usuário aceita caminhar, o RideSmart escolhe o melhor ponto de embarque `P` que minimize o custo total da viagem (caminhada `A → P` + carro `P → B`).
 
-O notebook compara quatro algoritmos de caminho mínimo — Dijkstra simples, Dijkstra com heap, A* geográfico e Bellman-Ford — aplicados à malha viária real obtida do OpenStreetMap, com e sem trânsito sintético.
+O notebook compara quatro algoritmos de caminho mínimo — Dijkstra simples, Dijkstra com heap, A\* geográfico e Bellman-Ford — aplicados à malha viária real obtida do OpenStreetMap, com e sem trânsito sintético.
 
 ---
 
@@ -63,18 +63,27 @@ projeto-ridesmart/
 
 ## Algoritmos implementados
 
-| Algoritmo | Complexidade | Suporte a pesos negativos |
-|---|---|---|
-| Dijkstra simples | O(V²) | Não |
-| Dijkstra com heap | O((V + E) log V) | Não |
-| A* geográfico | O((V + E) log V) | Não |
-| Bellman-Ford | O(V · E) | Sim |
+| Algoritmo         | Complexidade     | Suporte a pesos negativos |
+| ----------------- | ---------------- | ------------------------- |
+| Dijkstra simples  | O(V²)            | Não                       |
+| Dijkstra com heap | O((V + E) log V) | Não                       |
+| A\* geográfico    | O((V + E) log V) | Não                       |
+| Bellman-Ford      | O(V · E)         | Sim                       |
 
 ---
 
 ## Resultados
 
-> Seção será atualizada com gráficos e tabelas de comparação após a implementação de todas as issues.
+### Animações — Expansão dos Algoritmos
+
+Cada GIF mostra a ordem de expansão dos nós (azul) até encontrar o caminho mínimo (verde) entre o ponto de embarque `P` e o destino `B`.
+
+![Comparativo dos 4 algoritmos](anim_comparativo.gif)
+
+### Mapa Interativo (Plotly)
+
+O mapa interativo em HTML mostra a rota completa `A → P → B` sobre a malha viária, com zoom e pan.  
+Arquivo: [`mapa_interativo.html`](mapa_interativo.html) — abra no navegador.
 
 ---
 
@@ -83,6 +92,7 @@ projeto-ridesmart/
 Arquivo LaTeX: `docs/relatorio.tex` —模板 IEEEtran conference, 7 seções com placeholders `[DADOS]`.
 
 **Compilar o PDF:**
+
 ```bash
 cd docs
 pdflatex relatorio.tex
@@ -93,11 +103,11 @@ pdflatex relatorio.tex   # segunda passagem para referências cruzadas
 
 ## Integrantes
 
-| Nome | GitHub |
-|---|---|
+| Nome                           | GitHub                                             |
+| ------------------------------ | -------------------------------------------------- |
 | Eugenio Vitor Lopes dos Santos | [@EugenioVLopes](https://github.com/EugenioVLopes) |
-| Lucas Augusto da Silva Cardoso | [@Lucasadasc](https://github.com/Lucasadasc) |
-| Pedro Henrique Ribeiro de Lima | [@pedenriqu3](https://github.com/pedenriqu3) |
+| Lucas Augusto da Silva Cardoso | [@Lucasadasc](https://github.com/Lucasadasc)       |
+| Pedro Henrique Ribeiro de Lima | [@pedenriqu3](https://github.com/pedenriqu3)       |
 
 ---
 
