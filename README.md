@@ -50,13 +50,18 @@ Abra `projeto_final.ipynb`, selecione o kernel **ridesmart** e execute as célul
 
 ```
 projeto-ridesmart/
-├── projeto_final.ipynb         # Notebook principal com implementação e análise
-├── PROJETO_FINAL_RideSmart.md  # Especificação do projeto
+├── projeto_final.ipynb          # Notebook principal com implementação e análise
 ├── README.md
-├── cache/                      # Cache do OSMnx (dados do OpenStreetMap)
+├── cache/                       # Cache do OSMnx (dados do OpenStreetMap)
 ├── docs/
-│   └── relatorio.tex           # Relatório acadêmico (IEEE dupla coluna, LaTeX)
-└── venv/                       # Ambiente virtual (não versionado)
+│   └── relatorio.tex            # Relatório acadêmico (IEEE dupla coluna, LaTeX)
+├── anim_dijkstra_simples.gif    # Animação — Dijkstra simples
+├── anim_dijkstra_heap.gif       # Animação — Dijkstra com heap
+├── anim_astar.gif               # Animação — A* geográfico
+├── anim_bellman_ford.gif        # Animação — Bellman-Ford
+├── anim_comparativo.gif         # Animação — comparativo 4 algoritmos
+├── mapa_interativo.html         # Mapa interativo (Plotly)
+└── venv/                        # Ambiente virtual (não versionado)
 ```
 
 ---
@@ -89,7 +94,7 @@ Arquivo: [`mapa_interativo.html`](mapa_interativo.html) — abra no navegador.
 
 ## Relatório Acadêmico (IEEE Dupla Coluna)
 
-Arquivo LaTeX: `docs/relatorio.tex` —模板 IEEEtran conference, 7 seções com placeholders `[DADOS]`.
+Arquivo LaTeX: `docs/relatorio.tex` — 7 seções em 3 páginas.
 
 **Compilar o PDF:**
 
@@ -98,6 +103,24 @@ cd docs
 pdflatex relatorio.tex
 pdflatex relatorio.tex   # segunda passagem para referências cruzadas
 ```
+
+🔗 **Acesse o Relatório Final em PDF:** [docs/relatorio.pdf](docs/relatorio.pdf)
+
+### Validação de Referências
+
+**Citações usadas × bibitems definidos:** `osmnx`, `networkx`, `cormen` — todas com entrada na `thebibliography`.  
+**Orfãos na bibliografia:** `boeing`, `dijkstra`, `hart`, `bellman` — definidos mas sem `\cite{}` no texto (mantidos por completude das fontes originais).  
+**Labels × refs:** `tab:pesos`, `tab:desempenho`, `tab:rotas`, `eq:custo` — todos emparelhados corretamente.  
+**Equações expositivas** (sem `\ref`): `eq:walktime`, `eq:euclidiana` — intencional.
+
+---
+
+## Apresentação (Demo Section)
+
+A apresentação contendo os slides da Demo Section pode ser visualizada e compilada no diretório `docs`.
+
+🔗 **Acesse os Slides em PDF:** [docs/apresentacao.pdf](docs/apresentacao.pdf)
+
 
 ---
 

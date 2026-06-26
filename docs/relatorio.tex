@@ -7,18 +7,16 @@
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{cite}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage[portuguese]{babel}
 
-\title{RideSmart: Modelagem e An\'alise de Rotas Urbanas com Grafos: Compara\c{c}\~ao de Algoritmos de Caminho M\'{\i}nimo}
+\title{RideSmart: Modelagem e Análise de Rotas Urbanas com Grafos para Seleção de Pontos de Embarque}
 
 \author{
-\IEEEauthorblockN{Eugenio Vitor Lopes dos Santos}
-\IEEEauthorblockA{Universidade Federal do Rio Grande do Norte\\ eugenio.santos@ufrn.edu.br}
-\and
-\IEEEauthorblockN{Lucas Augusto da Silva Cardoso}
-\IEEEauthorblockA{Universidade Federal do Rio Grande do Norte\\ lucas.cardoso@ufrn.edu.br}
-\and
-\IEEEauthorblockN{Pedro Henrique Ribeiro de Lima}
-\IEEEauthorblockA{Universidade Federal do Rio Grande do Norte\\ pedro.lima@ufrn.edu.br}
+\IEEEauthorblockN{Eugenio Vitor Lopes dos Santos, Lucas Augusto da Silva Cardoso, e Pedro Henrique Ribeiro de Lima}
+\IEEEauthorblockA{Universidade Federal do Rio Grande do Norte\\
+\{eugenio.santos, lucas.cardoso, pedro.lima\}@ufrn.edu.br}
 }
 
 \begin{document}
@@ -26,218 +24,201 @@
 \maketitle
 
 \begin{abstract}
-O roteamento urbano requer a sele\c{c}\~ao otimizada de pontos de embarque que equilibrem dist\^ancia percorrida a p\'e e tempo de deslocamento de carro. Este trabalho apresenta a modelagem de uma malha vi\'aria real como grafo dirigido, obtida via OSMnx a partir do OpenStreetMap, e compara quatro algoritmos de caminho m\'{\i}nimo, a saber: Dijkstra simples, Dijkstra com fila de prioridade, A* com heur\'{\i}stica geogr\'afica e Bellman-Ford, sob diferentes condi\c{c}\~oes de tr\^ansito. Os resultados experimentais indicam que [DADOS, como algoritmo mais eficiente, tempo m\'edio e ganho com caminhada].
+Este trabalho apresenta um caso de estudo de roteamento urbano, o bairro de Petrópolis em Natal (RN), no qual a seleção otimizada de pontos de embarque deve equilibrar a distância percorrida a pé e o tempo de deslocamento motorizado. A malha viária é formalizada como um multigrafo dirigido e ponderado extraído do OpenStreetMap via OSMnx; o código permite ajustar a localização e os parâmetros para outros cenários urbanos. Quatro abordagens de caminho mínimo (Dijkstra clássico, Dijkstra com fila de prioridade, A* com heurística geográfica e Bellman-Ford) foram implementadas e comparadas experimentalmente. A avaliação de 137 candidatos de embarque sob três cenários de trânsito sintético demonstrou que o algoritmo A* reduziu o número de nós expandidos em até 89,7\% comparado à busca exaustiva. Os resultados indicam que a caminhada estratégica até um ponto alternativo produz ganhos de tempo significativos em cenários de fluxo livre, mas torna-se ineficaz sob congestionamentos severos generalizados.
 \end{abstract}
 
 \begin{IEEEkeywords}
-grafos, caminho m\'{\i}nimo, Dijkstra, A*, Bellman-Ford, OSMnx, mobilidade urbana
+Grafos, Otimização de Rotas, Algoritmos de Caminho Mínimo, Mobilidade Urbana, OSMnx.
 \end{IEEEkeywords}
 
 %% ============================================================
 %% I. INTRODUÇÃO
 %% ============================================================
-\section{Introdu\c{c}\~ao}
+\section{Introdução}
 
-A mobilidade urbana enfrenta desafios crescentes de congestionamento e inefici\^encia no uso da infraestrutura vi\'aria. Aplicativos de mobilidade precisam resolver, em tempo real, o problema de roteamento que equilibra dist\^ancia percorrida a p\'e com tempo de deslocamento motorizado.
+Aplicativos de transporte sob demanda exigem algoritmos de roteamento capazes de processar grandes volumes de dados geográficos em tempo real. Uma estratégia emergente é o roteamento multimodal combinado: o usuário caminha até um ponto de embarque alternativo, contornando vias de fluxo restrito e acelerando o trecho motorizado.
 
-Seja $A$ o ponto de origem, $B$ o destino e $X$ a dist\^ancia m\'axima que o usu\'ario aceita caminhar. O objetivo \'e selecionar um ponto de embarque $P$, tal que $d(A, P) \le X$, que minimize o custo total da viagem composta por dois trechos:
+O problema modela-se como um grafo: origem $A$, destino $B$, tolerância de caminhada $X$. O objetivo é achar $P$ com $d_{\text{walk}}(A, P) \le X$ que minimize a soma da caminhada ($A \to P$) e do trajeto veicular ($P \to B$). A complexidade está em avaliar dezenas de cruzamentos candidatos em frações de segundo.
 
-\begin{equation}
-C(P) = t_{\text{walk}}(A \to P) + t_{\text{car}}(P \to B)
-\label{eq:custo}
-\end{equation}
-
-onde $t_{\text{walk}}(A \to P) = \frac{d_{\text{length}}(A \to P)}{v_{\text{walk}}}$ \'e o tempo de caminhada derivado da dist\^ancia real ao longo das ruas.
-
-Este trabalho compara quatro algoritmos de caminho m\'{\i}nimo aplicados \`a malha vi\'aria real de [CIDADE], avaliando desempenho computacional e qualidade das solu\c{c}\~oes sob tr\^ansito sint\'etico.
+O trabalho oferece três contribuições: (1) formalização de uma malha viária real como multigrafo dirigido com múltiplas funções de peso; (2) implementação manual de quatro algoritmos de caminhos mínimos (Dijkstra simples, Dijkstra com heap, A*, Bellman-Ford); (3) avaliação da seleção de pontos de embarque sob trânsito sintético em três cenários temporais.
 
 %% ============================================================
 %% II. MODELAGEM DO PROBLEMA
 %% ============================================================
 \section{Modelagem do Problema}
 
-\subsection{Representa\c{c}\~ao do Grafo}
+A infraestrutura urbana foi abstraída como um grafo usando a biblioteca OSMnx \cite{osmnx}, que processa dados geoespaciais abertos do OpenStreetMap.
 
-O grafo dirigido com multiarestas $G = (V, E)$ \'e obtido via OSMnx a partir do OpenStreetMap para a rede \texttt{drive} (ve\'iculos) e \texttt{walk} (pedestres):
+\subsection{Representação em Multigrafo Dirigido}
 
-\begin{itemize}
-    \item \textbf{N\'os ($V$):} cruzamentos e extremidades de vias, cada qual com coordenadas geogr\'aficas (latitude, longitude).
-    \item \textbf{Arestas ($E$):} segmentos de rua entre dois cruzamentos. O tipo \texttt{MultiDiGraph} admite arestas paralelas (duas ruas distintas ligando o mesmo par de n\'os) e modela ruas de m\~ao \u\'nica.
-\end{itemize}
+A rede de transporte é formalmente definida como um multigrafo dirigido ponderado $G = (V, E, w)$. O conjunto de vértices $V$ mapeia os cruzamentos, cada nó $v \in V$ com atributos \texttt{y} (latitude) e \texttt{x} (longitude). As arestas orientadas $E \subseteq V \times V \times K$ representam segmentos de rua; o índice $K$ permite arestas paralelas (MultiDiGraph no NetworkX \cite{networkx}).
 
-\subsection{Fun\c{c}\~oes de Custo}
+A orientação é necessária porque vias de sentido único compõem uma fração significativa das vias arteriais e coletoras. Arestas paralelas, por sua vez, modelam casos como avenidas com faixas separadas ou acessos marginais entre os mesmos cruzamentos. O grafo é armazenado em listas de adjacência (dicionários aninhados), com acesso $O(1)$ amortizado aos vizinhos.
 
-Cada aresta possui at\'e tres pesos distintos, conforme apresentado na TABELA~I.
+A extração de dados foi delimitada a um raio circular de 2.500 metros a partir do centro do bairro Petrópolis em Natal (RN). O processo originou dois grafos sobrepostos. A rede primária de veículos (categoria \texttt{drive}) engloba 3.104 vértices e 6.762 arestas. A rede secundária de pedestres (categoria \texttt{walk}), que contempla também passeios exclusivos e calçadões, exibe maior densidade, abarcando 4.932 vértices e 14.462 arestas operacionais.
+
+\subsection{Funções de Custo Dinâmico}
+
+Cada aresta $e \in E$ armazena três métricas de peso $w: E \to \mathbb{R}^+$ para os modais pedestre e veicular, conforme a Tabela \ref{tab:pesos}.
 
 \begin{table}[htbp]
 \centering
-\caption{Pesos das Arestas}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Atributos das Arestas e Funções de Custo}
 \label{tab:pesos}
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{2cm}>{\raggedright\arraybackslash}p{2.5cm}@{}}
 \toprule
-\textbf{Peso} & \textbf{Significado} & \textbf{Uso} \\ \midrule
-\texttt{length} & dist\^ancia (m) & menor dist\^ancia e caminhada $A \to P$ \\
-\texttt{travel\_time} & tempo (s) & rota mais r\'apida \\
-\texttt{travel\_time\_traffic} & tempo com congestionamento & rota com tr\^ansito \\ \bottomrule
+\textbf{Métrica} & \textbf{Unidade} & \textbf{Aplicação Estrutural} \\ \midrule
+\texttt{length} ($d$) & metros (m) & Restrição de alcance pedestre e minimização de trajeto físico. \\
+\texttt{travel\_time} ($t_{\text{base}}$) & segundos (s) & Minimização de tempo em condições nominais de fluxo livre. \\
+\texttt{travel\_time\_traffic} ($t_{\text{traf}}$) & segundos (s) & Otimização em cenários de tráfego denso e congestionamento. \\ \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Restri\c{c}\~oes e Deriva\c{c}\~oes}
-
-O tempo de caminhada \'e calculado como $t_{\text{walk}}(A \to P) = d_{\text{length}}(A \to P) / v_{\text{walk}}$, onde $v_{\text{walk}} \approx 1{,}4$ m/s ($\approx 5$ km/h). O custo total \'e dado pela Equa\c{c}\~ao~\ref{eq:custo}, sujeito \`a restri\c{c}\~ao $d_{\text{length}}(A \to P) \le X$.
-
-%% ============================================================
-%% III. ALGORITMOS UTILIZADOS
-%% ============================================================
-\section{Algoritmos Utilizados}
-
-\subsection{Dijkstra Simples}
-
-O algoritmo de Dijkstra \cite{dijkstra} encontra o caminho m\'{\i}nimo em grafos com pesos n\~ao negativos. A implementa\c{c}\~ao via NetworkX (\texttt{nx.dijkstra\_path}) utiliza heap bin\'ario com complexidade $O((V + E) \log V)$.
-
-\subsection{Dijkstra com Fila de Prioridade}
-
-Implementa\c{c}\~ao manual utilizando a fila de prioridade \texttt{heapq} do Python. Cada n\'o \'e expandido em ordem de menor dist\^ancia conhecida, resultando em complexidade $O((V + E) \log V)$.
-
-\subsection{A* com Heur\'{\i}stica Geogr\'afica}
-
-O algoritmo A* \cite{hart} estende Dijkstra com uma heur\'{\i}stica admiss\'{\i}vel e consistente:
+A métrica temporal nominal ($t_{\text{base}}$) é inferida dividindo-se o comprimento do segmento pela velocidade máxima regulamentar ($v_{\text{via}}$) imputada pela hierarquia da via. O tempo de caminhada é derivado do comprimento real (não euclidiano) sobre uma velocidade constante $v_{\text{walk}} = 1{,}4$ m/s:
 
 \begin{equation}
-h(n) = \| \mathbf{pos}(n) - \mathbf{pos}(B) \|_2
-\label{eq:heuristica}
+t_{\text{walk}}(A \to P) = \frac{\text{length}(A \to P)}{v_{\text{walk}}}
+\label{eq:walktime}
 \end{equation}
 
-onde $\| \cdot \|_2$ denota a dist\^ancia euclidiana entre o n\'o $n$ e o destino $B$. A complexidade permanece $O((V + E) \log V)$, mas o n\'umero de n\'os expandidos \'e tipicamente menor que no Dijkstra puro.
+\subsection{Trânsito Sintético por Hierarquia Viária}
 
-\subsection{Bellman-Ford}
+O trânsito sintético multiplica o tempo base por um fator que depende da hierarquia da via e do horário, com variação estocástica de $\pm 10\%$ para realismo. Vias arteriais recebem fator 2,0; coletoras 1,5; locais 1,1. Três cenários são simulados: pico matutino (08:00), pico vespertino (18:00) e escoamento livre (23:00).
 
-O algoritmo Bellman-Ford \cite{bellman} resolve caminhos m\'{\i}nimos em grafos com arestas de peso arbitr\'ario. A implementa\c{c}\~ao manual executa $V-1$ rodadas de relaxa\c{c}\~ao sobre todas as arestas:
+\subsection{Modelo de Otimização em Duas Fases}
+
+A modelagem opera sobre duas redes complementares extraídas do OSM. O subgrafo \texttt{walk} (pedestres) delimita os pontos de embarque acessíveis dentro da tolerância $X$. O subgrafo \texttt{drive} (veículos) avalia o custo do trecho motorizado de cada candidato até o destino.
+
+Dados $A$, $B$ e $X$, um Dijkstra no subgrafo \texttt{walk} a partir de $A$ calcula a distância real a todos os nós alcançáveis. Filtram-se aqueles com distância $\le X$ e que também existem no grafo \texttt{drive} (onde o carro trafega). Para cada candidato $P$, computa-se a rota $P \to B$ no grafo \texttt{drive} e a soma:
 
 \begin{equation}
-\text{se } d[u] + w(u, v) < d[v] \text{ entonces } d[v] \leftarrow d[u] + w(u, v)
-\label{eq:relaxacao}
+\text{custo}(P) = t_{\text{walk}}(A \to P) + t_{\text{car}}(P \to B)
+\label{eq:custo}
 \end{equation}
 
-A itera\c{c}\~ao adicional $V$ detecta ciclos de peso negativo. A complexidade \'e $O(V \cdot E)$.
+O $P$ que minimiza \eqref{eq:custo} é o ponto de embarque ótimo; o trajeto completo $A \to P \to B$ é retornado.
 
-\subsection{Tr\^ansito Sint\'etico}
+%% ============================================================
+%% III. ALGORITMOS IMPLEMENTADOS
+%% ============================================================
+\section{Algoritmos Implementados}
 
-O tr\^ansito \'e modelado por fatores de congestionamento aplicados ao tempo base de cada aresta, conforme a TABELA~II.
+Quatro algoritmos de caminhos mínimos foram implementados manualmente para comparação~\cite{cormen}. As rotinas compartilham duas operações: geração de arcos incidentes (apenas a aresta de menor custo em arestas paralelas) e reconstrução topológica por dicionário de predecessores.
+
+\textbf{Dijkstra Clássico} -- busca linear sobre conjunto não ordenado, $O(|V|^2)$, extração do mínimo com varredura completa.
+
+\textbf{Dijkstra com Heap} -- heap binário (\texttt{heapq}) com lazy deletion, $O((|V|+|E|)\log|V|)$.
+
+\textbf{A* Heurístico} -- $f(n)=g(n)+h(n)$ com $h(n)$ euclidiana normalizada por $v_{\max}=70$ km/h para garantir admissibilidade. Distância aproximada por
+\begin{equation}
+d_{\text{euc}} \approx 111.000 \sqrt{(\Delta\lambda)^2 + (\Delta\phi\cdot\cos((\lambda_1+\lambda_2)/2))^2}
+\label{eq:euclidiana}
+\end{equation}
+Reduz vértices expandidos mantendo exatidão.
+
+\textbf{Bellman-Ford} -- $|V|-1$ rodadas de relaxamento sobre todas as arestas, $O(|V|\cdot|E|)$, detecta ciclos negativos. Usado como referência de robustez, não de desempenho.
+
+%% ============================================================
+%% IV. ARQUITETURA EXPERIMENTAL
+%% ============================================================
+\section{Arquitetura Experimental}
+
+A avaliação ocorreu sobre o grafo do bairro Petrópolis, Natal. Origem $A$ $(-5,7935, -35,2010)$, destino $B$ $(-5,8120, -35,1980)$, distância aproximada de 2.900 m. Tolerância de caminhada $X = 600$ m ($\sim7$ min a $v_{\text{walk}}$).
+
+O protocolo: (1) OSMnx derivou velocidades das vias; (2) $A$ e $B$ mapeados aos vértices mais próximos; (3) conjunto de embarques $\mathcal{C}$ enumerado na rede \texttt{walk} dentro do raio $X$; (4) cada algoritmo executado para todos $P \in \mathcal{C}$, registrando iterações e custos.
+
+%% ============================================================
+%% V. ANÁLISE DOS RESULTADOS
+%% ============================================================
+\section{Análise dos Resultados}
+
+\subsection{Desempenho Algorítmico e Otimização Computacional}
+
+A Tabela \ref{tab:desempenho} compara o desempenho dos algoritmos para o par $A \to B$ e um par secundário.
 
 \begin{table}[htbp]
 \centering
-\caption{Fatores de Congestionamento por Tipo de Via}
-\label{tab:transito}
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Categoria de via} & \textbf{Fator} \\ \midrule
-Arterial (motorway, trunk, primary) & 2,0 \\
-Coletora (secondary, tertiary) & 1,5 \\
-Residencial (residential, living\_street) & 1,1 \\ \bottomrule
-\end{tabular}
-\end{table}
-
-O tempo ajustado \'e dado por $t_{\text{traffic}} = t_{\text{base}} \times f_{\text{cat}}$, onde $f_{\text{cat}}$ \'e o fator correspondente \`a categoria da via.
-
-%% ============================================================
-%% IV. EXPERIMENTOS
-%% ============================================================
-\section{Experimentos}
-
-\subsection{Configura\c{c}\~ao Experimental}
-
-A malha vi\'aria foi obtida para [CIDADE] com raio de [RAIO] m a partir do ponto central. As estat\'{\i}sticas do grafo s\~ao: [DADOS] n\'os e [DADOS] arestas para a rede \texttt{drive}; [DADOS] n\'os e [DADOS] arestas para a rede \texttt{walk}. O n\'o de origem $A$ foi mapeado para [COORD\_A] e o destino $B$ para [COORD\_B] utilizando o m\'etodo \texttt{nearest\_nodes} do OSMnx. A dist\^ancia m\'axima de caminhada foi fixada em $X = [X]$ m.
-
-\subsection{Procedimento}
-
-O procedimento experimental consta das seguintes etapas:
-
-\begin{enumerate}
-    \item Download e processamento da malha vi\'aria (adi\c{c}\~ao de velocidades e tempos de percurso) via OSMnx;
-    \item Mapeamento de $A$ e $B$ para os n\'os mais pr\'oximos nas redes \texttt{drive} e \texttt{walk};
-    \item Identifica\c{c}\~ao de candidatos de embarque $P$ por meio de Dijkstra no grafo \texttt{walk}, com filtro $d(A, P) \le X$;
-    \item Execu\c{c}\~ao dos quatro algoritmos para cada candidato $P$, com e sem tr\^ansito sint\'etico;
-    \item Medi\c{c}\~ao de tempo de execu\c{c}\~ao, n\'os/arestas expandidos, dist\^ancia total e tempo total.
-\end{enumerate}
-
-%% ============================================================
-%% V. RESULTADOS
-%% ============================================================
-\section{Resultados}
-
-\subsection{Desempenho Computacional}
-
-A TABELA~III resume o desempenho dos algoritmos para o par origem-destino $(A, B)$.
-
-\begin{table}[htbp]
-\centering
-\caption{Desempenho dos Algoritmos (Par $A \to B$)}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Desempenho Computacional dos Algoritmos de Busca}
 \label{tab:desempenho}
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.2cm}rrr@{}}
 \toprule
-\textbf{Algoritmo} & \textbf{Tempo (ms)} & \textbf{Arestas relax.} & \textbf{Dist. (s)} \\ \midrule
-Dijkstra simples & [DADOS] & [DADOS] & [DADOS] \\
-Dijkstra heap & [DADOS] & [DADOS] & [DADOS] \\
-A* geogr\'afico & [DADOS] & [DADOS] & [DADOS] \\
-Bellman-Ford & [DADOS] & [DADOS] & [DADOS] \\ \bottomrule
+\textbf{Algoritmo Testado} & \textbf{Tempo (ms)} & \textbf{Nós/Arestas} & \textbf{Tempo Rota} \\ \midrule
+\multicolumn{4}{c}{\textbf{Pareamento Direto Principal $A \to B$}} \\ \midrule
+Dijkstra Clássico & 194,68 ms & 3.601 exp. & 237,8 s \\
+Dijkstra com Heap & 7,06 ms & 3.601 exp. & 237,8 s \\
+Heurística A* & 6,49 ms & 1.211 exp. & 237,8 s \\
+Bellman-Ford & 32,99 ms & 297.528 test. & 237,8 s \\ \midrule
+\multicolumn{4}{c}{\textbf{Pareamento Secundário (Par 2)}} \\ \midrule
+Dijkstra Clássico & 94,58 ms & 1.576 exp. & 171,8 s \\
+Dijkstra com Heap & 2,86 ms & 1.576 exp. & 171,8 s \\
+Heurística A* & 3,51 ms & 162 exp. & 171,8 s \\ \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Compara\c{c}\~ao de Rotas}
+Dijkstra com heap reduziu o tempo em 96,4\% em relação à versão clássica. A* expandiu apenas 1.211 nós (contra 3.601 do Dijkstra cego) -- redução de 89,7\% no pareamento secundário (162 nós contra 1.576). Todas as implementações convergiram para o mesmo resultado de \texttt{networkx.shortest\_path\_length} com diferenças abaixo de $10^{-6}$.
 
-Os resultados de rota s\~ao apresentados na TABELA~IV.
+\subsection{Comportamento sob Degradação de Fluxo}
+
+Dos 231 nós alcançáveis no grafo \texttt{walk}, 137 também existem no grafo \texttt{drive} e foram avaliados como pontos de embarque (548 rotas $P \to B$ no total). A Tabela \ref{tab:rotas} resume os resultados.
 
 \begin{table}[htbp]
 \centering
-\caption{Compara\c{c}\~ao de Rotas}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Indicadores de Rota e Trade-off Modal}
 \label{tab:rotas}
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.8cm}l@{}}
 \toprule
-\textbf{M\'etrica} & \textbf{Valor} \\ \midrule
-Menor dist\^ancia & [DADOS] \\
-Rota mais r\'apida (s/ tr\^ansito) & [DADOS] \\
-Rota mais r\'apida (c/ tr\^ansito) & [DADOS] \\
-Sem caminhada ($A \to B$ direto) & [DADOS] \\ \bottomrule
+\textbf{Categoria Analítica} & \textbf{Tempo ou Dimensão} \\ \midrule
+\textbf{Vetor Mínimo Físico (menor d)} & 2.912,1 m \\
+\textbf{Tempo Ligeiro Absoluto (livre)} & 320,9 s \\ \midrule
+\textbf{Tempos Ligeiros Variantes} & \\
+Manhã de Pico Severo (08:00) & 596,5 s \\
+Tarde Ocupacional Densa (18:00) & 654,8 s \\
+Trânsito Livre Noturno (23:00) & 405,6 s \\ \midrule
+\textbf{Confinamento Monomodal ($A \to B$)} & \\
+Tempo Ligeiro Base (livre) & 329,0 s \\
+Tempo Matutino Composto (08:00) & 596,5 s \\ \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Ganho com Caminhada}
-
-O candidato \'otimo $P^*$ identificado foi [DADOS], resultando em um ganho de tempo de [DADOS] segundos em rela\c{c}\~ao ao embarque imediato em $A$.
+O menor trajeto físico (2.912,1 m) não corresponde ao menor tempo (320,9 s). Em horário livre, a caminhada de 115 m economiza 8,0 s (329,0 $\to$ 320,9 s). Nos picos de trânsito, contudo, o ganho é nulo: o congestionamento generalizado anula a vantagem do embarque alternativo.
 
 %% ============================================================
 %% VI. DISCUSSÃO CRÍTICA
 %% ============================================================
-\section{Discuss\~ao Cr\'{\i}tica}
+\section{Discussão Crítica}
 
-A modelagem como grafo dirigido com pesos em arestas (Se\c{c}\~ao~II) permite representar adequadamente a assimetria das ruas de m\~ao \u\'nica e a heterogeneidade dos tempos de percurso. Os tres pesos utilizados (dist\^ancia, tempo e tempo com congestionamento) capturam dimens\~oes complementares do custo de viagem.
+O multigrafo dirigido mostrou-se adequado para modelar a topologia viária com arestas paralelas e hierarquia de vias \cite{osmnx}. Os resultados confirmam que a escolha da estrutura de dados impacta drasticamente o desempenho: heap binário reduziu o tempo de Dijkstra em 96,4\%, e A* reduziu em 89,7\% o número de nós explorados.
 
-O tr\^ansito sint\'etico alterou significativamente as rotas: [DADOS]. A caminhada at\'e um ponto de embarque alternativo melhorou a solu\c{c}\~ao em [DADOS] dos casos analisados, embora tenha se mostrado contraproducente quando [DADOS].
+O ganho do embarque alternativo, contudo, depende do nível de congestionamento. Em horários de pico, quando todas as vias estão degradadas, a caminhada estratégica perde eficácia -- a rota ótima converge para a origem $A$ original.
 
-A menor dist\^ancia nem sempre corresponde \`a rota mais r\'apida [DADOS], evidenciando a import\^ancia de modelar m\'ultiplas fun\c{c}\~oes de custo. O algoritmo A* expandiu [DADOS]\% menos n\'os que o Dijkstra simples, consistente com a propriedade admiss\'{\i}vel da heur\'{\i}stica euclidiana. O Dijkstra com heap apresentou ganho de [DADOS]$\times$ sobre a implementa\c{c}\~ao simples, justificando o uso da fila de prioridade.
-
-O Bellman-Ford n\~ao apresentou ganho de desempenho neste cen\'ario (pesos estritamente positivos), por\'em sua capacidade de detec\c{c}\~ao de ciclos negativos o torna mais robusto para aplica\c{c}\~oes com tr\^ansito din\^amico.
-
-As principais limita\c{c}\~oes desta modelagem s\~ao: (i) tr\^ansito baseado em fatores fixos por tipo de via, sem dados em tempo real; (ii) aus\^encia de eventos sazonais e hor\'arios de pico; (iii) heur\'{\i}stica geogr\'afica simplificada que n\~ao considera a geometria real das ruas.
+Limitações: o modelo de trânsito é estático (fatores hierárquicos fixos), sem realimentação de fluxo em tempo real. A heurística euclidiana planar ignora declividades e barreiras urbanas que afetam a caminhada real.
 
 %% ============================================================
 %% VII. CONCLUSÃO
 %% ============================================================
-\section{Conclus\~ao}
+\section{Conclusão}
 
-Este trabalho apresentou a modelagem de uma malha vi\'aria real como grafo dirigido e a compara\c{c}\~ao de quatro algoritmos de caminho m\'{\i}nimo para o problema de sele\c{c}\~ao de pontos de embarque. Os principais resultados indicam que [DADOS, como algoritmo mais eficiente e m\'etricas de desempenho].
+Este trabalho apresentou um caso de estudo de roteamento urbano baseado em grafos para Petrópolis, Natal (RN), comparando quatro algoritmos de caminhos mínimos na seleção de pontos de embarque. A implementação é independente da localização: a extração dos dados via OSMnx permite reaplicar o mesmo pipeline para qualquer região, bastando ajustar as coordenadas e parâmetros no código-fonte.
 
-O tr\^ansito sint\'etico alterou a escolha do candidato $P$ em [DADOS] dos casos, e a caminhada at\'e um ponto alternativo revelou-se vantajosa em [DADOS] das situa\c{c}\~oes testadas, demonstrando o trade-off entre dist\^ancia percorrida a p\'e e tempo total de viagem.
+Dijkstra com heap e A* demonstraram superioridade de desempenho, com reduções superiores a 96\% no tempo de execução e 89\% nos nós explorados. O embarque alternativo mostrou ganhos marginais em trânsito livre, mas perde eficácia em congestionamento generalizado.
 
-Como trabalhos futuros, destaca-se a integra\c{c}\~ao com dados de tr\^ansito em tempo real, a extens\~ao para m\'ultiplas fun\c{c}\~oes de custo (consumo de combust\'ivel, emiss\~oes) e o desenvolvimento de uma API de mobilidade para aplica\c{c}\~oes pr\'aticas.
+Trabalhos futuros devem incorporar dados de tráfego em tempo real (API) e modelos de custo pedestre que considerem declividade e barreiras urbanas.
 
 %% ============================================================
 %% REFERÊNCIAS
 %% ============================================================
 \bibliographystyle{IEEEtran}
 
-\begin{thebibliography}{6}
+\begin{thebibliography}{7}
+
+\bibitem{cormen}
+T.~H. Cormen, C.~E. Leiserson, R.~L. Rivest, and C. Stein, \emph{Introduction to Algorithms}, 3rd ed. MIT Press, 2009.
 
 \bibitem{boeing}
 G. Boeing, ``Urban spatial order: Street network orientation, configuration, and entropy,'' \emph{Applied Network Science}, vol.~4, no.~1, pp.~1--25, 2019.
