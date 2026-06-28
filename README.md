@@ -8,6 +8,16 @@ O notebook compara quatro algoritmos de caminho mínimo — Dijkstra simples, Di
 
 ---
 
+## Integrantes
+
+| Nome                           | GitHub                                             |
+| ------------------------------ | -------------------------------------------------- |
+| Eugenio Vitor Lopes dos Santos | [@EugenioVLopes](https://github.com/EugenioVLopes) |
+| Lucas Augusto da Silva Cardoso | [@Lucasadasc](https://github.com/Lucasadasc)       |
+| Pedro Henrique Ribeiro de Lima | [@pedenriqu3](https://github.com/pedenriqu3)       |
+
+---
+
 ## Pré-requisitos
 
 - Python 3.12+
@@ -101,38 +111,9 @@ Arquivo LaTeX: `docs/relatorio.tex` — 7 seções em 3 páginas.
 ```bash
 cd docs
 pdflatex relatorio.tex
-pdflatex relatorio.tex   # segunda passagem para referências cruzadas
 ```
 
 🔗 **Acesse o Relatório Final em PDF:** [docs/relatorio.pdf](docs/relatorio.pdf)
-
-### Validação de Referências
-
-**Citações usadas × bibitems definidos:** `osmnx`, `networkx`, `cormen` — todas com entrada na `thebibliography`.  
-**Orfãos na bibliografia:** `boeing`, `dijkstra`, `hart`, `bellman` — definidos mas sem `\cite{}` no texto (mantidos por completude das fontes originais).  
-**Labels × refs:** `tab:pesos`, `tab:desempenho`, `tab:rotas`, `eq:custo` — todos emparelhados corretamente.  
-**Equações expositivas** (sem `\ref`): `eq:walktime`, `eq:euclidiana` — intencional.
-
----
-
-## Apresentação (Demo Section)
-
-A apresentação contendo os slides da Demo Section pode ser visualizada e compilada no diretório `docs`.
-
-🔗 **Acesse os Slides em PDF:** [docs/apresentacao.pdf](docs/apresentacao.pdf)
-
-
----
-
-## Integrantes
-
-| Nome                           | GitHub                                             |
-| ------------------------------ | -------------------------------------------------- |
-| Eugenio Vitor Lopes dos Santos | [@EugenioVLopes](https://github.com/EugenioVLopes) |
-| Lucas Augusto da Silva Cardoso | [@Lucasadasc](https://github.com/Lucasadasc)       |
-| Pedro Henrique Ribeiro de Lima | [@pedenriqu3](https://github.com/pedenriqu3)       |
-
----
 
 ## Referências
 
